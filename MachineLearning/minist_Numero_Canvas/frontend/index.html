@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dibuja un Número</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #eeeeee;
+      text-align: center;
+      padding: 40px 20px;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2em;
+      color: #ffffff;
+    }
+
+    canvas {
+      border: 3px solid #ffffff;
+      border-radius: 10px;
+      background-color: #1e1e1e;
+      cursor: crosshair;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+      margin-bottom: 20px;
+    }
+
+    #botones {
+      margin-top: 15px;
+    }
+
+    button {
+      background-color: #03dac6;
+      border: none;
+      color: #000;
+      padding: 12px 22px;
+      margin: 0 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #00bfa5;
+      transform: scale(1.05);
+    }
+
+    #resultado {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 25px;
+      color: #f1f1f1;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    @media (max-width: 500px) {
+      canvas {
+        width: 100%;
+        height: auto;
+      }
+
+      button {
+        display: block;
+        margin: 10px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Dibuja un número (0-9)</h1>
+  <canvas id="canvas" width="280" height="280"></canvas>
+  <div id="botones">
+    <button onclick="enviar()">Predecir</button>
+    <button onclick="limpiar()">Limpiar</button>
+  </div>
+  <h2 id="resultado">Esperando tu dibujo...</h2>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let dibujando = false;
+
+    ctx.fillStyle = "#1e1e1e";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 40;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "white";
+
+    canvas.addEventListener('mousedown', () => dibujando = true);
+    canvas.addEventListener('mouseup', () => {
+      dibujando = false;
+      ctx.beginPath();
+    });
+    canvas.addEventListener('mouseout', () => {
+      dibujando = false;
+      ctx.beginPath();
+    });
+    canvas.addEventListener('mousemove', dibujar);
+
+    function dibujar(e) {
+      if (!dibujando) return;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function limpiar() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.fillStyle = "#1e1e1e";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('resultado').innerText = 'Esperando tu dibujo...';
+    }
+
+    function enviar() {
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("file", blob, "imagen.png");
+
+        fetch("http://127.0.0.1:8000/predict", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('resultado').innerText = "Predicción: " + data.prediccion;
+        })
+        .catch(err => {
+          console.error("Error al predecir:", err);
+          document.getElementById('resultado').innerText = 'Error';
+        });
+      });
+    }
+  </script>
+</body>
+</html>
