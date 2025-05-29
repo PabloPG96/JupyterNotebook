@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Clasificador</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #2980b9, #6dd5fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    .container {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 2rem;
+      border-radius: 15px;
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    input[type="file"] {
+      padding: 0.5rem;
+      background-color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 80%;
+    }
+
+    #preview {
+      margin-top: 1rem;
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 10px;
+      display: none;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.7rem 2rem;
+      background-color: #27ae60;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2ecc71;
+    }
+
+    #resultado {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1.2em;
+      background: #fff;
+      color: #333;
+      padding: 0.8rem;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Clasificador de covid</h1>
+
+    <div class="input-group">
+      <input type="file" id="archivo" accept=".jpg,.jpeg,.png">
+      <img id="preview" src="#" alt="Vista previa">
+    </div>
+
+    <button onclick="enviarImagen()">Predecir Clase</button>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    const inputArchivo = document.getElementById('archivo');
+    const imgPreview = document.getElementById('preview');
+    const resultadoDiv = document.getElementById('resultado');
+
+    inputArchivo.addEventListener('change', () => {
+      const archivo = inputArchivo.files[0];
+      if (archivo) {
+        const lector = new FileReader();
+        lector.onload = e => {
+          imgPreview.src = e.target.result;
+          imgPreview.style.display = 'block';
+        };
+        lector.readAsDataURL(archivo);
+      }
+    });
+
+    async function enviarImagen() {
+      const archivo = inputArchivo.files[0];
+      if (!archivo) {
+        alert("Por favor, selecciona una imagen.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", archivo);
+
+      try {
+        const respuesta = await fetch("http://127.0.0.1:8000/predict", {
+          method: "POST",
+          body: formData
+        });
+
+        const datos = await respuesta.json();
+
+        if (respuesta.ok) {
+          resultadoDiv.innerText = `Predicción: ${datos.clase}`;
+        } else {
+          resultadoDiv.innerText = `Error: ${datos.error}`;
+        }
+      } catch (error) {
+        resultadoDiv.innerText = "Error en la conexión con el servidor.";
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
